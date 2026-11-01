@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0d0c">
+  <meta name="description" content="25×25 核心 + 31×31 设计预留的实时战棋：5v5、草丛、防御塔、三路兵线、英雄复活、专注操控、战争迷雾、小地图与水晶胜负。">
+  <title>弈 · 即时棋局 | 25×25 核心 · 31×31 预留</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d0f0d'/%3E%3Ccircle cx='24' cy='32' r='13' fill='%23f06356'/%3E%3Ccircle cx='42' cy='32' r='13' fill='%2367adf5'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true">
+    <div class="atmosphere__glow atmosphere__glow--left"></div>
+    <div class="atmosphere__glow atmosphere__glow--right"></div>
+    <div class="atmosphere__grain"></div>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand__seal" aria-hidden="true">弈</div>
+      <div class="brand__copy">
+        <span class="eyebrow">REAL-TIME GRID DUEL</span>
+        <h1>即时棋局 <em>25<small>×</small>25</em></h1>
+      </div>
+    </div>
+
+    <div class="skill-dock" id="skillDock" hidden>
+      <div class="skill-dock__head">
+        <span>ABILITIES</span>
+        <b id="skillOwner">赤1</b>
+      </div>
+      <div class="skill-dock__skills">
+        <button class="skill-btn" id="skillBtn1" data-skill="1" type="button" aria-label="技能1 折跃，快捷键 U">
+          <span class="skill-btn__shade" id="skill1Shade"></span>
+          <span class="skill-btn__key">U</span>
+          <svg class="skill-btn__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 19 17 7M11 7h6v6M5 13v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="skill-btn__name">折跃</span>
+          <span class="skill-btn__cd" id="skill1Cd">READY</span>
+        </button>
+        <button class="skill-btn" id="skillBtn2" data-skill="2" type="button" aria-label="技能2 震域，快捷键 I">
+          <span class="skill-btn__shade" id="skill2Shade"></span>
+          <span class="skill-btn__key">I</span>
+          <svg class="skill-btn__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="6" y="6" width="12" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M9.5 6v12M14.5 6v12M6 9.5h12M6 14.5h12" fill="none" stroke="currentColor" stroke-width=".8" opacity=".7"/>
+            <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+          </svg>
+          <span class="skill-btn__name">震域</span>
+          <span class="skill-btn__cd" id="skill2Cd">READY</span>
+        </button>
+        <button class="skill-btn skill-btn--locked" id="skillBtn3" type="button" disabled aria-label="技能3 未实装，快捷键 Q">
+          <span class="skill-btn__key">Q</span>
+          <svg class="skill-btn__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 4v16M4 12h16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".45"/>
+          </svg>
+          <span class="skill-btn__name">未实装</span>
+          <span class="skill-btn__cd">LOCKED</span>
+        </button>
+      </div>
+      <div class="skill-dpad" id="skillDpad" hidden>
+        <button class="skill-dir skill-dir--w" data-dir="W" type="button" aria-label="向上">W</button>
+        <button class="skill-dir skill-dir--a" data-dir="A" type="button" aria-label="向左">A</button>
+        <button class="skill-dir skill-dir--s" data-dir="S" type="button" aria-label="向下">S</button>
+        <button class="skill-dir skill-dir--d" data-dir="D" type="button" aria-label="向右">D</button>
+        <span class="skill-dpad__center" id="skillDpadCenter">1</span>
+      </div>
+      <p class="skill-dock__hint" id="skillHint">选择技能</p>
+    </div>
+
+    <div class="topbar__actions">
+      <div class="sim-chip" title="游戏逻辑以固定 0.1 秒步长运行">
+        <span class="sim-chip__dot" aria-hidden="true"></span>
+        <span>逻辑帧</span>
+        <strong>0.1s</strong>
+      </div>
+      <button class="btn btn--ghost" id="editorBtn" type="button">
+        <span class="btn__icon" aria-hidden="true">✎</span>
+        创造
+      </button>
+      <button class="btn btn--ghost" id="helpBtn" type="button">
+        <span class="btn__icon" aria-hidden="true">?</span>
+        规则
+      </button>
+      <button class="btn btn--primary" id="restartBtn" type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M20 11a8 8 0 1 1-2.34-5.66M20 4v7h-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        重新开局
+      </button>
+    </div>
+  </header>
+
+  <main class="game-layout">
+    <section class="board-card" aria-labelledby="boardTitle">
+      <div class="board-card__head">
+        <div>
+          <span class="eyebrow">THE BOARD</span>
+          <h2 id="boardTitle">二十五 × 二十五 战场</h2>
+        </div>
+        <div class="board-meta">
+          <span class="auto-badge"><i aria-hidden="true"></i>25×25 核心 · 31×31 预留</span>
+          <span class="game-clock"><span>T+</span><b id="gameClock">00:00.0</b></span>
+        </div>
+      </div>
+
+      <div class="editor-bar" id="editorBar" hidden>
+        <div class="editor-bar__head">
+          <div>
+            <span class="eyebrow">MAP FORGE</span>
+            <b>创造模式</b>
+          </div>
+          <span class="editor-hint" id="editorHint">选择工具，在棋盘上点击或拖动</span>
+        </div>
+
+        <div class="editor-tools" role="toolbar" aria-label="地图编辑工具">
+          <button class="editor-tool is-active" type="button" data-editor-tool="board">棋盘</button>
+          <button class="editor-tool" type="button" data-editor-tool="grass">草丛</button>
+          <button class="editor-tool" type="button" data-editor-tool="wall">墙壁</button>
+          <button class="editor-tool" type="button" data-editor-tool="tower">防御塔</button>
+          <button class="editor-tool" type="button" data-editor-tool="spawn">英雄出生</button>
+          <button class="editor-tool" type="button" data-editor-tool="minion-spawn">蓝方小兵</button>
+          <button class="editor-tool" type="button" data-editor-tool="lane">兵线</button>
+          <button class="editor-tool" type="button" data-editor-tool="clear">清除</button>
+        </div>
+
+        <div class="editor-bar__settings">
+          <div class="editor-team">
+            <span>阵营</span>
+            <button class="editor-team__btn is-active" type="button" data-editor-team="blue">蓝</button>
+            <button class="editor-team__btn" type="button" data-editor-team="red">赤</button>
+          </div>
+          <div class="editor-slots">
+            <span>英雄</span>
+            <button class="editor-slot__btn is-active" type="button" data-editor-slot="0">1</button>
+            <button class="editor-slot__btn" type="button" data-editor-slot="1">2</button>
+            <button class="editor-slot__btn" type="button" data-editor-slot="2">3</button>
+            <button class="editor-slot__btn" type="button" data-editor-slot="3">4</button>
+            <button class="editor-slot__btn" type="button" data-editor-slot="4">5</button>
+          </div>
+          <div class="editor-lanes">
+            <span>兵线</span>
+            <button class="editor-lane__btn is-active" type="button" data-editor-lane="0">1</button>
+            <button class="editor-lane__btn" type="button" data-editor-lane="1">2</button>
+            <button class="editor-lane__btn" type="button" data-editor-lane="2">3</button>
+          </div>
+          <span class="editor-wave">200帧/波 · 两侧各9兵 · 16帧/兵</span>
+          <button class="editor-action" id="editorSave" type="button">保存棋盘</button>
+          <button class="editor-action" id="editorImport" type="button">导入</button>
+          <button class="editor-action" id="editorExport" type="button">导出</button>
+          <button class="editor-action editor-action--primary" id="editorApply" type="button">开始对局</button>
+          <button class="editor-action" id="editorReset" type="button">重置</button>
+          <button class="editor-action" id="editorCancel" type="button">退出</button>
+        </div>
+        <input class="editor-file" id="boardImportFile" type="file" accept=".json,application/json" hidden>
+      </div>
+
+      <div class="board-frame">
+        <div class="board" id="board" role="application" aria-label="二十五乘二十五核心棋盘，外围预留三十一乘三十一设计空间。棋子在格子上，点击棋子，再点击空位下达移动或变道指令。" tabindex="0">
+          <div class="board__grain" aria-hidden="true"></div>
+
+          <div class="axis axis--top" id="axisTop" aria-hidden="true"></div>
+          <div class="axis axis--bottom" id="axisBottom" aria-hidden="true"></div>
+          <div class="axis axis--left" id="axisLeft" aria-hidden="true"></div>
+          <div class="axis axis--right" id="axisRight" aria-hidden="true"></div>
+
+          <div class="cell-grid" id="cellGrid" aria-hidden="true"></div>
+          <span class="core-frame" id="coreFrame" aria-hidden="true"></span>
+          <div class="grass-layer" id="grassLayer" aria-hidden="true"></div>
+
+          <div class="range-layer" id="rangeLayer" aria-hidden="true"></div>
+          <div class="skill-layer" id="skillLayer" aria-hidden="true"></div>
+
+          <svg class="path-svg" viewBox="0 0 100 100" aria-hidden="true">
+            <path id="pathLine" class="path-line" d=""></path>
+            <g id="pathDots"></g>
+            <g id="destinationMarker" class="destination-marker" opacity="0">
+              <circle class="destination-marker__halo" r="2.25"></circle>
+              <circle class="destination-marker__ring" r="1.4"></circle>
+              <circle class="destination-marker__dot" r="0.5"></circle>
+            </g>
+          </svg>
+
+          <svg class="wall-svg" id="wallLayer" viewBox="0 0 100 100" aria-hidden="true">
+            <g id="wallGroup"></g>
+          </svg>
+
+          <div class="fog-layer" id="fogLayer" aria-hidden="true"></div>
+          <span class="focus-frame" id="focusFrame" aria-hidden="true"></span>
+
+          <div class="tower-layer" id="towerLayer"></div>
+          <div class="piece-layer" id="pieceLayer"></div>
+          <div class="minion-layer" id="minionLayer"></div>
+          <div class="target-mark" id="targetMark" aria-hidden="true"><span></span></div>
+          <div class="editor-layer" id="editorLayer" aria-hidden="true"></div>
+
+          <svg class="lane-svg" id="laneLayer" viewBox="0 0 100 100" aria-hidden="true">
+            <g id="laneGroup"></g>
+          </svg>
+
+          <svg class="fx-svg" id="fxLayer" viewBox="0 0 100 100" aria-hidden="true"></svg>
+
+          <div class="cursor-mark" id="cursorMark" aria-hidden="true"></div>
+          <div class="coord-tip" id="coordTip" aria-hidden="true"></div>
+
+          <span class="board-corner board-corner--tl" aria-hidden="true"></span>
+          <span class="board-corner board-corner--tr" aria-hidden="true"></span>
+          <span class="board-corner board-corner--bl" aria-hidden="true"></span>
+          <span class="board-corner board-corner--br" aria-hidden="true"></span>
+        </div>
+      </div>
+
+      <div class="board-card__foot">
+        <div class="board-instruction">
+          <span class="board-instruction__orb" aria-hidden="true"></span>
+          <span id="instructionText">点击任意一枚棋子开始</span>
+          <span class="board-instruction__hint" id="instructionHint">再选择一个空位</span>
+        </div>
+        <div class="rate-legend">
+          <span><b>0.5</b>s / 格</span>
+          <i aria-hidden="true"></i>
+          <span><b>+4</b> 帧后摇</span>
+          <i aria-hidden="true"></i>
+          <span><b>10</b> 帧普攻</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="focus-hud" id="focusHud" hidden>
+      <div class="focus-hud__head">
+        <b id="focusName">蓝1</b>
+        <span id="focusTeam">蓝方视角</span>
+      </div>
+      <canvas id="minimap" width="360" height="360" aria-label="小地图"></canvas>
+      <p class="focus-hud__hint">WASD 移动 · J 普攻 · U/I 技能</p>
+      <p class="focus-hud__hint focus-hud__hint--dim">1–5 切人 · ~ 换边 · P 退出</p>
+    </div>
+
+    <aside class="sidebar" aria-label="棋局信息">
+      <section class="panel fighters">
+        <div class="panel__head">
+          <div>
+            <span class="eyebrow">COMBATANTS</span>
+            <h2>双方编队</h2>
+          </div>
+          <span class="panel__index">02</span>
+        </div>
+
+        <div class="team-card team-card--red" id="teamRed">
+          <div class="team-card__head">
+            <div class="team-card__identity">
+              <span class="team-badge team-badge--red" aria-hidden="true">赤</span>
+              <div>
+                <b>赤方</b>
+                <small>RED SQUAD</small>
+              </div>
+            </div>
+            <div class="team-card__count"><b id="aliveRed">5</b><span>/ 5</span></div>
+          </div>
+          <div class="unit-row" id="unitsRed"></div>
+        </div>
+
+        <div class="team-card team-card--blue" id="teamBlue">
+          <div class="team-card__head">
+            <div class="team-card__identity">
+              <span class="team-badge team-badge--blue" aria-hidden="true">蓝</span>
+              <div>
+                <b>蓝方</b>
+                <small>BLUE SQUAD</small>
+              </div>
+            </div>
+            <div class="team-card__count"><b id="aliveBlue">5</b><span>/ 5</span></div>
+          </div>
+          <div class="unit-row" id="unitsBlue"></div>
+        </div>
+      </section>
+
+      <section class="panel command">
+        <div class="panel__head">
+          <div>
+            <span class="eyebrow">COMMAND</span>
+            <h2>行动指令</h2>
+          </div>
+          <span class="live-badge"><i aria-hidden="true"></i>LIVE</span>
+        </div>
+
+        <ol class="steps">
+          <li class="step is-active" id="stepOne">
+            <b>01</b>
+            <span>选择棋子</span>
+            <i aria-hidden="true"></i>
+          </li>
+          <li class="step" id="stepTwo">
+            <b>02</b>
+            <span>点击空位</span>
+            <i aria-hidden="true"></i>
+          </li>
+        </ol>
+
+        <div class="readout">
+          <div>
+            <span>选中</span>
+            <strong id="statSelected">—</strong>
+          </div>
+          <div>
+            <span>路径</span>
+            <strong id="statSteps">—</strong>
+          </div>
+          <div>
+            <span>预计</span>
+            <strong id="statEta">—</strong>
+          </div>
+        </div>
+
+        <div class="selected-line">
+          <span class="selected-line__dot" id="selectedDot" aria-hidden="true"></span>
+          <span id="selectedState">未选择棋子</span>
+          <b id="selectedHp">HP —</b>
+        </div>
+
+        <p class="command__note" id="commandNote">点击己方棋子后点地移动，点敌人标记跟踪。P 专注：WASD 移动、J 普攻、U/I 技能；1–5 切人，~ 换边，0 全队集合。</p>
+      </section>
+
+      <section class="panel log">
+        <div class="panel__head panel__head--compact">
+          <div>
+            <span class="eyebrow">BATTLE LOG</span>
+            <h2>战局记录</h2>
+          </div>
+          <span class="panel__index">03</span>
+        </div>
+        <ol class="log-list" id="logList" aria-live="polite"></ol>
+      </section>
+
+      <section class="tempo" aria-label="帧节奏">
+        <div><span>逻辑帧</span><b>0.1<small>s</small></b></div>
+        <div><span>移动 / 格</span><b>0.5<small>s</small></b></div>
+        <div><span>落点后摇</span><b>4<small>帧</small></b></div>
+        <div><span>攻击间隔</span><b>10<small>帧</small></b></div>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="site-foot">
+    <span>点击棋子 → 点击空位</span>
+    <span class="site-foot__rule" aria-hidden="true"></span>
+    <span>5v5 编队 · 每子 15 HP</span>
+    <span class="site-foot__rule" aria-hidden="true"></span>
+    <span>斜线路径优先 · 移动中可变道</span>
+    <span class="site-foot__spacer"></span>
+    <span class="site-foot__sig">YI / 25×25 CORE · 31×31</span>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="result" id="resultOverlay" aria-hidden="true">
+    <div class="result__backdrop"></div>
+    <div class="result__card" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+      <span class="eyebrow">MATCH COMPLETE</span>
+      <div class="result__stone" id="resultStone" aria-hidden="true">赤</div>
+      <h2 id="resultTitle">赤方获胜</h2>
+      <p id="resultDesc">蓝方水晶被摧毁。</p>
+      <div class="result__meta">
+        <span>用时 <b id="resultTime">00:00.0</b></span>
+        <span>剩余 <b id="resultRemaining">5</b> 子</span>
+      </div>
+      <button class="btn btn--primary btn--wide" id="replayBtn" type="button">再来一局</button>
+    </div>
+  </div>
+
+  <dialog class="rules" id="helpDialog">
+    <div class="rules__head">
+      <div>
+        <span class="eyebrow">HOW TO PLAY</span>
+        <h2>棋局规则</h2>
+      </div>
+      <button class="rules__close" id="closeHelp" type="button" aria-label="关闭规则">×</button>
+    </div>
+    <div class="rules__body">
+      <div class="rule">
+        <span class="rule__no">01</span>
+        <div><h3>格子棋盘与斜线路径</h3><p>实际战场是 25 × 25 个格子，并额外预留 31 × 31 的设计空间；四角调整通过向外扩展格子完成，而不是削减核心棋盘。前往斜向目标时，路径会尽量交替使用两个方向，形成贴近直线的阶梯。</p></div>
+      </div>
+      <div class="rule">
+        <span class="rule__no">02</span>
+        <div><h3>移动、跟踪与集合</h3><p>点击己方棋子后，点击空位移动；点击敌方棋子、小兵或防御塔会标记目标并自动跟踪。按 <b>0</b> 后点击地图任意位置，可让当前视角队伍全部英雄前往集合。手动点地移动后，英雄自主行动时会先回到最近的兵线。</p></div>
+      </div>
+      <div class="rule">
+        <span class="rule__no">03</span>
+        <div><h3>警戒与攻击</h3><p>静止棋子会警戒周围 8 格，敌人踏入范围立即自动攻击。每 10 帧结算一次伤害，目标优先级为：小兵 → 英雄 → 防御塔。</p></div>
+      </div>
+      <div class="rule">
+        <span class="rule__no">04</span>
+        <div><h3>5v5 与复活</h3><p>双方各 5 名英雄，每名 15 HP。英雄被击败后不会结束对局，而是在己方对应出生点等待复活；只有水晶被摧毁才会结束游戏。</p></div>
+      </div>
+      <div class="rule">
+        <span class="rule__no">05</span>
+        <div><h3>英雄技能</h3><p>技能快捷键为 <b>U</b>（一技能）、<b>I</b>（二技能）、<b>Q</b>（三技能，未实装）。<b>1 号</b>：折跃（U）与震域（I）。<b>3 号</b>：普攻伤害 2、攻击范围为塔射程（曼哈顿 3）；折跃（U）+ 强化普攻（I，冷却 90 帧，下三次普攻伤害 3）。<b>2 / 4 号</b>：复苏（U，冷却 900 帧，为自己和 5×5 内血量最低的英雄恢复 20% 最大生命，向上取整；自主行动时减半，范围内有英雄低于 50% 时自动触发）。</p></div>
+      </div>
+      <div class="rule">
+        <span class="rule__no">06</span>
+        <div><h3>草丛与墙壁</h3><p>相邻草丛会连成同一片草丛。草丛中的棋子半透明；不同草丛中的单位无法自动索敌，直到草丛中的棋子发动攻击并暴露 30 帧，头顶出现眼睛标记。技能仍然可以命中草丛中的单位。墙壁沿格子边线放置，阻挡普通移动与寻路，但不阻挡技能。</p></div>
+      </div>
+      <div class="rule">
+        <span class="rule__no">07</span>
+        <div><h3>防御塔与小兵</h3><p>防御塔 45 HP，攻击范围为以自身为中心的菱形（3×3 再向上下左右各延伸两格），优先攻击小兵：对小兵 1 点伤害，对棋子 2 点伤害。小兵 3 HP，8 帧移动一格，3×3 索敌，攻击自身及上下左右一格，前摇 3 帧、后摇 12 帧。小兵只被墙壁阻挡，可以与其他小兵、英雄和防御塔重叠。</p></div>
+      </div>
+      <div class="rule">
+        <span class="rule__no">08</span>
+        <div><h3>创造模式</h3><p>点击顶部「创造」进入地图编辑。以 25 × 25 核心棋盘为基础，使用 31 × 31 预留空间向外扩展四角；可以拓展/删除棋盘格、放置草丛与墙壁、设置防御塔阵营、双方各 5 个英雄出生点、蓝方小兵刷新点、三条双向兵线。「保存棋盘」会把当前设计写入浏览器本地存储并备份旧版本；「导入 / 导出」可跨浏览器迁移 JSON；「开始对局」应用地图并重开。</p></div>
+      </div>
+      <div class="rule">
+        <span class="rule__no">09</span>
+        <div><h3>三路兵线</h3><p>三条兵线均为双向：蓝方小兵从蓝方小兵点出发，赤方小兵从该兵线的另一端出发，沿同一路径反向推进。每 200 帧双方各生成 9 个小兵，每条兵线各 3 个，每个小兵间隔 16 帧生成。</p></div>
+      </div>
+      <div class="rule">
+        <span class="rule__no">10</span>
+        <div><h3>复活时间</h3><p>0–4 分钟：8 秒起，每 30 秒约提升 11%，4 分钟达到 20 秒。4–20 分钟：平滑增长至 46 秒。20–35 分钟：每分钟增加 1 秒，最高 60 秒。35 分钟后固定 60 秒。所有时长按 0.1 秒逻辑帧四舍五入。</p></div>
+      </div>
+      <div class="rule">
+        <span class="rule__no">11</span>
+        <div><h3>自动行动</h3><p>超过 30 帧没有收到玩家指令时，英雄自动行动：7×7 索敌；优先小兵、其次英雄、再次防御塔；无友方小兵进入敌方塔范围时不会越塔。1/2 号走一号兵线，3/4 号走三号兵线，5 号走二号兵线，双方方向相反。</p></div>
+      </div>
+      <div class="rule">
+        <span class="rule__no">12</span>
+        <div><h3>水晶</h3><p>每方最靠近己方 5 号英雄出生点的防御塔被标记为水晶。水晶生命耗尽时游戏立即结束，另一方获胜。</p></div>
+      </div>
+      <div class="rule">
+        <span class="rule__no">13</span>
+        <div><h3>专注操控</h3><p>选中英雄后按 <b>P</b> 进入专注模式：棋盘放大为以该英雄为中心的 7×7 视口，其余界面收起，小地图独立放在棋盘左侧、不遮挡棋盘。<b>W/A/S/D</b> 移动，<b>J</b> 普攻（范围内没有敌人时不生效），<b>U/I</b> 释放技能。J 支持预输入，会在当前后摇结束后衔接。按 <b>1–5</b> 切换锁定英雄，<b>~</b> 在蓝/赤方之间切换。</p></div>
+      </div>
+      <div class="rule">
+        <span class="rule__no">14</span>
+        <div><h3>战争迷雾</h3><p>己方英雄提供 7×7 视野，己方防御塔提供攻击范围视野，己方小兵提供索敌范围视野。视野外只保留敌方防御塔、草丛和地形，敌方英雄与小兵不可见；同一草丛内或草丛中单位攻击暴露 30 帧时可以看见。视野外区域覆盖半透明黑块，专注模式仅保留该英雄的 7×7 视野。</p></div>
+      </div>
+      <div class="rules__diagram">
+        <div class="rules__range" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><b>赤</b><i></i><i></i><i></i><i></i>
+        </div>
+        <div>
+          <p class="rules__caption">攻击范围</p>
+          <p class="rules__hint">中心棋子周围的 8 个格子。棋局以固定 0.1 秒逻辑帧推进，动画独立渲染。</p>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn--primary btn--wide" id="understoodBtn" type="button">开始对弈</button>
+  </dialog>
+
+  <script src="game.js"></script>
+</body>
+</html>
+
+
+

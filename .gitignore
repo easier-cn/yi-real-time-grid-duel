@@ -1,0 +1,9 @@
+# Personal board recovery data (contains the user's saved board)
+saved-board-recovered.json
+saved-board-raw.bin
+
+# Temporary/exported files
+*.tmp
+.tmp-*
+Thumbs.db
+.DS_Store
